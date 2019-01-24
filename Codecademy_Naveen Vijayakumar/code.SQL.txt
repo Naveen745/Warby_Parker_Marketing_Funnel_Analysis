@@ -1,0 +1,97 @@
+Q1 - Select all columns from the first 10 rows. What columns does the table have?
+ SELECT * FROM survey
+ LIMIT 10;
+ 
+Q2 - What is the number of responses for each question?
+ SELECT question, COUNT(response) FROM survey
+ GROUP BY question;
+ 
+Q3 - USE EXCEL
+
+Q4 -  Home try on funnel - What are the column names?
+SELECT *
+FROM quiz
+LIMIT 5;
+
+SELECT *
+FROM home_try_on
+LIMIT 5;
+
+SELECT *
+FROM purchase
+LIMIT 5;
+
+
+Q5 - TRUE/FALSE
+
+SELECT DISTINCT substr(q.user_id,0,9) AS 'user_id',
+    CASE 
+    WHEN h.user_id IS NOT NULL then 'True'
+    Else 'False'
+    End
+    AS 'is_home_try_on', 
+    CASE
+    WHEN h.number_of_pairs is '3 pairs' THEN 3
+    WHEN h.number_of_pairs is '5 pairs' THEN 5
+    ELSE 'NULL'
+    END
+    AS 'number_of_pairs', 
+    CASE
+    WHEN p.user_id IS NOT NULL THEN 'True'
+    ELSE 'False'
+    END
+    AS 'is_purchase' 
+    FROM quiz q
+LEFT JOIN home_try_on h
+ON q.user_id = h.user_id
+LEFT JOIN purchase p
+ON p.user_id = h.user_id
+LIMIT 10;
+
+Q6 - 
+
+OVERALL CONVERSION RATES:
+WITH funnels 
+AS (SELECT q.user_id, 
+    h.user_id IS NOT NULL AS 'is_home_try_on', 
+    h.number_of_pairs AS 'pairs', 
+    p.user_id IS NOT NULL AS 'is_purchase' 
+    FROM quiz AS 'q'
+LEFT JOIN home_try_on AS 'h'
+ON q.user_id = h.user_id
+LEFT JOIN purchase AS 'p'
+ON p.user_id = h.user_id)
+SELECT
+COUNT(user_id) AS 'Quiz', 
+SUM(is_home_try_on) AS 'Tried', 
+ROUND(100.0 * SUM(is_home_try_on)/COUNT(user_id), 3) AS 'Percentage tried %', SUM(is_purchase) AS 'Purchase',
+ROUND(100.0 * SUM(is_purchase)/SUM(is_home_try_on), 3) AS 'Percentage purchased %', 
+ROUND(100.0 * SUM(is_purchase)/COUNT(user_id), 3) AS 'Quiz to Purchase %'
+FROM funnels;
+
+Purchase rates based on pairs tried:
+WITH funnels 
+AS (SELECT DISTINCT q.user_id, 
+    h.user_id IS NOT NULL AS 'is_home_try_on', 
+    h.number_of_pairs AS 'pairs', 
+    p.user_id IS NOT NULL AS 'is_purchase' 
+    FROM quiz AS 'q'
+LEFT JOIN home_try_on AS 'h'
+ON q.user_id = h.user_id
+LEFT JOIN purchase AS 'p'
+ON p.user_id = h.user_id
+   WHERE h.number_of_pairs IS NOT NULL)
+SELECT pairs AS 'Pairs tried', SUM(is_purchase) AS 'Purchased',
+ROUND(100.0 * SUM(is_purchase)/SUM(is_home_try_on), 3) AS 'Percentage purchased', 
+ROUND(100.0 * SUM(is_purchase)/COUNT(user_id), 3) AS 'Quiz to Purchase'
+FROM funnels
+GROUP BY pairs;
+
+Most common results of style quiz
+SELECT style AS 'Style', COUNT(user_id) AS 'Result' FROM quiz
+GROUP BY style;
+
+Most common type of purchase made
+SELECT style AS 'Style', model_name AS 'Model', price AS 'Price', COUNT(user_id) AS '# purchased' FROM purchase
+GROUP BY 2
+ORDER BY 4 DESC;
